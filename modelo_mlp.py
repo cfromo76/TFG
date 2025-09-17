@@ -2,10 +2,8 @@
 Universidad: UNIR - Curso de Adaptación al Grado de Informática
 TFG: Diseño de una RNA para la detección de la influencia en la conducción por el consumo drogas, estupefacientes y psicotrópicos 
 Autor: Cristóbal Fernández Romo
-Asunto: Análisis de características mediante técnicas de interpretabilidad (XAI) mediante tecnica SHAP
-Descripción: Mediante la implementación de este script en python se pretende comprender qué factores guían las 
-decisiones del modelo. Para ello se ha utilziado una tecnica de interpretabilidad (XAI) mediante
-el método SHAP (SHapley Additive Explanations).
+Asunto: Implementación del MLP
+Descripción: Mediante la implementación del presente script de python se implementa la MLP y se entrena.
 """
 
 # ======================================================================================================
@@ -13,14 +11,12 @@ el método SHAP (SHapley Additive Explanations).
 #    Importamos las librerías necesarias para el tratamiento de datos, modelado y evaluación
 # ======================================================================================================
 
-import pandas as pd
-import numpy as np
-import shap
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.neural_network import MLPClassifier
 
+import pandas as pd  # Para manejo de datos tabulares (CSV)
+from sklearn.model_selection import train_test_split  # Para dividir los datos en entrenamiento y prueba
+from sklearn.preprocessing import StandardScaler  # Para normalizar variables numéricas
+from sklearn.neural_network import MLPClassifier  # Para construir el perceptrón multicapa (MLP)
+from sklearn.metrics import classification_report, confusion_matrix  # Para evaluar el modelo
 
 # ======================================================================================================
 # 2. Carga y preparación de datos
@@ -28,8 +24,8 @@ from sklearn.neural_network import MLPClassifier
 #    Este archivo debe estar en la misma carpeta que este script.
 # ======================================================================================================
 
-df = pd.read_csv("dataset_acta_extendido_realista_1000.csv", sep=";")
 
+df = pd.read_csv("dataset_acta_extendido_realista_1000.csv", sep=";")
 
 # ======================================================================================================
 # 3. Separación de variables y preprocesamiento
@@ -57,56 +53,44 @@ X["G_diametro_pupilar_ambos_ojos_presentan"] = scaler.fit_transform(
 #    Estratificamos según la variable 'influencia' para mantener la proporción de clases (80/20%)
 # ======================================================================================================
 
-X_train, X_test, y_train, y_test = train_test_split( X,
-                                                     y,
-                                                     stratify=y,
-                                                     test_size=0.2,
-                                                     random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X,
+                                                    y,
+                                                    test_size=0.2,
+                                                    stratify=y,
+                                                    random_state=42)
 
 # ======================================================================================================
-# 6. Definición del modelo MLP
+# 6. Definición, entrenamiento y análisis del modelo MLP
 #    Creamos y entrenamos un perceptrón multicapa (MLP) con dos capas ocultas:
 #       - 64 neuronas en la primera capa
 #       - 32 neuronas en la segunda capa
 #       - Función de activación es ReLU 
 #       - Entrenamiento se limita a 1000 iteraciones.
 # ======================================================================================================
+mlp = MLPClassifier(hidden_layer_sizes=(64, 32), activation='relu', max_iter=1000, random_state=42)
 
-mlp = MLPClassifier(hidden_layer_sizes=(64, 32), activation="relu", max_iter=1000, random_state=42)
 
 # ======================================================================================================
 # 7. Entrenamiento del modelo MLP
 # ======================================================================================================
 
-mlp.fit(X_train, y_train)
+mlp.fit(X_train, y_train)  # Entrenamos el modelo con los datos de entrenamiento
+
 
 # ======================================================================================================
-# 8. Análisis de características mediante SHAP  
-#    Selección de una muestra representativa del conjunto de entrenamiento
-#    para calcular los valores SHAP y generar el gráfico de resumen.
-# ======================================================================================================
-X_sample = X_train.sample(n=300, random_state=42)
+# 8. EVALUACIÓN DEL MODELO
+#    Evaluamos el modelo con los datos de prueba.
+# =====================================================================================================
+
+y_pred = mlp.predict(X_test)
 
 # ======================================================================================================
-# 9. Cálculo de valores SHAP y generación del gráfico de resumen
-#    Utilizamos SHAP para interpretar las predicciones del modelo MLP.
+# 9. Resultados de la evaluación
+#    Mostramos la matriz de confusión y un informe detallado de precisión, recall y F1-score
 # ======================================================================================================
 
-explainer = shap.KernelExplainer(mlp.predict, X_sample)
+print("Matriz de confusión:")
+print(confusion_matrix(y_test, y_pred))
 
-# ======================================================================================================
-# 10. Cálculo de valores SHAP para la muestra seleccionada
-# ======================================================================================================
-shap_values = explainer.shap_values(X_sample)
-
-# ======================================================================================================
-# 11. Generación del gráfico de resumen SHAP
-#     El gráfico de resumen muestra la importancia de las características
-#     y cómo afectan a las predicciones del modelo. 
-# ======================================================================================================
-
-plt.figure()
-shap.summary_plot(shap_values, X_sample, show=False)
-plt.tight_layout()
-plt.savefig("shap_resumen_mlp_300.jpg", format="jpg", dpi=300)
-plt.close()
+print("\nInforme de clasificación:")
+print(classification_report(y_test, y_pred))

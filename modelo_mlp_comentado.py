@@ -18,20 +18,31 @@ from sklearn.preprocessing import StandardScaler  # Para normalizar variables nu
 from sklearn.neural_network import MLPClassifier  # Para construir el perceptrón multicapa (MLP)
 from sklearn.metrics import classification_report, confusion_matrix  # Para evaluar el modelo
 
-# === CARGA DE DATOS ===
-# Cargamos el dataset generado a partir del acta de signos externos.
-# Este archivo debe estar en la misma carpeta que este script.
+# ======================================================================================================
+# 2. Carga y preparación de datos
+#    Cargamos el dataset generado a partir del acta de signos externos.
+#    Este archivo debe estar en la misma carpeta que este script.
+# ======================================================================================================
+
+
 df = pd.read_csv("dataset_acta_extendido_realista_1000.csv", sep=";")
 
-# === SEPARACIÓN DE VARIABLES ===
-# X contendrá las variables predictoras (signos clínicos y comportamentales)
-# y contendrá la variable objetivo: influencia (1 = influenciado, 0 = no influenciado)
+# ======================================================================================================
+# 3. Separación de variables y preprocesamiento
+#    Separamos las variables predictoras y la variable objetivo.    
+#    X contendrá las variables predictoras (signos clínicos y comportamentales)
+#    y contendrá la variable objetivo: influencia (1 = influenciado, 0 = no influenciado)
+# ======================================================================================================
+
 X = df.drop(columns=["influencia"])
 y = df["influencia"]
 
-# === PREPROCESAMIENTO ===
-# Normalizamos únicamente la variable continua del diámetro pupilar,
-# ya que las demás son binarias (0/1) y no requieren escalado.
+# ======================================================================================================
+# 4. Preprocesamiento
+#    Normalizamos únicamente la variable continua del diámetro pupilar.
+#    El resto de variables son binarias (0/1) y no requieren escalado.
+# ======================================================================================================
+
 scaler = StandardScaler()
 X["G_diametro_pupilar_ambos_ojos_presentan"] = scaler.fit_transform(
     X[["G_diametro_pupilar_ambos_ojos_presentan"]]
@@ -41,19 +52,36 @@ X["G_diametro_pupilar_ambos_ojos_presentan"] = scaler.fit_transform(
 # Estratificamos según la variable 'influencia' para mantener la proporción de clases
 X_train, X_test, y_train, y_test = train_test_split( X, y, test_size=0.2, stratify=y, random_state=42)
 
-# === DEFINICIÓN Y ENTRENAMIENTO DEL MODELO MLP ===
-# Creamos un perceptrón multicapa con dos capas ocultas:
-# - 64 neuronas en la primera capa
-# - 32 neuronas en la segunda capa
-# La función de activación es ReLU y el entrenamiento se limita a 1000 iteraciones.
+# ======================================================================================================
+# 6. Definición, entrenamiento y análisis del modelo MLP
+#    Creamos y entrenamos un perceptrón multicapa (MLP) con dos capas ocultas:
+#       - 64 neuronas en la primera capa
+#       - 32 neuronas en la segunda capa
+#       - Función de activación es ReLU 
+#       - Entrenamiento se limita a 1000 iteraciones.
+# ======================================================================================================
 mlp = MLPClassifier(hidden_layer_sizes=(64, 32), activation='relu', max_iter=1000, random_state=42)
+
+
+# ======================================================================================================
+# 7. Entrenamiento del modelo MLP
+# ======================================================================================================
+
 mlp.fit(X_train, y_train)  # Entrenamos el modelo con los datos de entrenamiento
 
-# === EVALUACIÓN DEL MODELO ===
-# Evaluamos el modelo con los datos de prueba.
+
+# ======================================================================================================
+# 8. EVALUACIÓN DEL MODELO
+#    Evaluamos el modelo con los datos de prueba.
+# =====================================================================================================
+
 y_pred = mlp.predict(X_test)
 
-# Mostramos la matriz de confusión y un informe detallado de precisión, recall y F1-score
+# ======================================================================================================
+# 9. Resultados de la evaluación
+#    Mostramos la matriz de confusión y un informe detallado de precisión, recall y F1-score
+# ======================================================================================================
+
 print("Matriz de confusión:")
 print(confusion_matrix(y_test, y_pred))
 
